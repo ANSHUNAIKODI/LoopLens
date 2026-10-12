@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoopLens — YouTube Video Repetition & Community Analysis</title>
+  <meta name="description" content="LoopLens helps YouTube viewers identify videos that contain repeated footage, looped sections, or incomplete uploads before wasting valuable time.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Background Glow Accents -->
+  <div class="ambient-glow glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow glow-2" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2.5" class="svg-ring-outer"/>
+            <circle cx="16" cy="16" r="8" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3" class="svg-ring-inner"/>
+            <path d="M14 11L21 16L14 21V11Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">LoopLens</span>
+          <span class="brand-badge">BETA</span>
+        </div>
+      </div>
+      <div class="header-status">
+        <div id="api-status-badge" class="status-indicator-badge checking">
+          <span class="status-dot"></span>
+          <span id="api-status-text">Checking server...</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section" aria-labelledby="main-heading">
+      <div class="hero-badge">
+        <span class="sparkle-icon">✨</span>
+        <span>Community-Driven Video Integrity Scanner</span>
+      </div>
+      <h1 id="main-heading" class="hero-title">
+        Your time is valuable.<br>
+        <span class="highlight-text">Check before you watch.</span>
+      </h1>
+      <p class="hero-description">
+        Scan any YouTube video for authentic viewer reports of repeated footage, 
+        loop-padded runtime, and cut-off or incomplete versions.
+      </p>
+
+      <!-- Analysis Mode Switcher -->
+      <div class="mode-tabs-container" role="tablist" aria-label="Analysis Modes">
+        <button type="button" role="tab" id="tab-youtube" class="mode-tab active" aria-selected="true" aria-controls="panel-youtube">
+          <span class="mode-tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+              <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"/>
+            </svg>
+          </span>
+          <div class="mode-tab-info">
+            <div class="mode-tab-heading">
+              <span class="mode-tab-title">YouTube Community Scanner</span>
+              <span class="mode-badge-live">LIVE API</span>
+            </div>
+            <span class="mode-tab-sub">Scan public comments for repeat flags</span>
+          </div>
+        </button>
+
+        <button type="button" role="tab" id="tab-video" class="mode-tab" aria-selected="false" aria-controls="panel-video">
+          <span class="mode-tab-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="20" rx="3" ry="3"/>
+              <line x1="7" y1="2" x2="7" y2="22"/>
+              <line x1="17" y1="2" x2="17" y2="22"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <line x1="2" y1="7" x2="7" y2="7"/>
+              <line x1="2" y1="17" x2="7" y2="17"/>
+              <line x1="17" y1="7" x2="22" y2="7"/>
+              <line x1="17" y1="17" x2="22" y2="17"/>
+            </svg>
+          </span>
+          <div class="mode-tab-info">
+            <div class="mode-tab-heading">
+              <span class="mode-tab-title">Video Frame Analyzer</span>
+              <span class="mode-badge-proto">PROTOTYPE</span>
+            </div>
+            <span class="mode-tab-sub">Perceptual repeated footage detection (CV)</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Analyzer Card -->
+      <div class="analyzer-card">
+        
+        <!-- Panel 1: YouTube URL Scanner -->
+        <div id="panel-youtube" class="analyzer-panel active" role="tabpanel" aria-labelledby="tab-youtube">
+          <form id="analyze-form" class="analyzer-form" novalidate>
+            <div class="input-wrapper">
+              <div class="input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+                  <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="currentColor"/>
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                id="video-url-input" 
+                class="url-input" 
+                placeholder="Paste YouTube link (e.g., https://www.youtube.com/watch?v=... or youtu.be/...)"
+                aria-label="YouTube Video URL"
+                autocomplete="off"
+                spellcheck="false"
+                required
+              />
+              <button type="button" id="clear-input-btn" class="clear-btn" title="Clear input" aria-label="Clear input" style="display: none;">
+                &times;
+              </button>
+            </div>
+            <button type="submit" id="analyze-btn" class="analyze-btn">
+              <span class="btn-spinner" id="btn-spinner" aria-hidden="true" style="display: none;"></span>
+              <span class="btn-icon" id="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </span>
+              <span class="btn-text" id="btn-text">Analyze Video</span>
+            </button>
+          </form>
+
+          <div id="input-error" class="input-error-msg" role="alert" style="display: none;"></div>
+
+          <div class="input-guidance">
+            <span class="guidance-label">Supported:</span>
+            <span class="guidance-tag">youtube.com/watch?v=...</span>
+            <span class="guidance-tag">youtu.be/...</span>
+            <span class="guidance-tag">youtube.com/shorts/...</span>
+          </div>
+        </div>
+
+        <!-- Panel 2: Video File Frame Analyzer (Prototype) -->
+        <div id="panel-video" class="analyzer-panel" role="tabpanel" aria-labelledby="tab-video" style="display: none;">
+          <form id="upload-video-form" class="upload-form" novalidate>
+            <!-- Dropzone -->
+            <div id="video-dropzone" class="video-dropzone" tabindex="0" role="button" aria-label="Drop video file or click to browse">
+              <input 
+                type="file" 
+                id="video-file-input" 
+                accept=".mp4,.mov,.avi,.mkv,.webm,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska" 
+                style="display: none;" 
+              />
+              <div class="dropzone-content">
+                <div class="dropzone-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <div class="dropzone-text-block">
+                  <p class="dropzone-title">Drag & drop your video file here, or <span class="dropzone-browse">browse</span></p>
+                  <p class="dropzone-sub">Supported: MP4, WebM, MOV, AVI, MKV &bull; Max 100 MB &bull; Up to 30 mins</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selected File Display -->
+            <div id="selected-file-card" class="selected-file-card" style="display: none;">
+              <div class="file-icon-box" aria-hidden="true">🎬</div>
+              <div class="file-info-col">
+                <span id="selected-file-name" class="file-name">video.mp4</span>
+                <span id="selected-file-size" class="file-size">0 MB</span>
+              </div>
+              <button type="button" id="remove-file-btn" class="remove-file-btn" title="Remove file" aria-label="Remove selected file">
+                &times;
+              </button>
+            </div>
+
+            <!-- Permission Confirmation Checkbox -->
+            <div class="permission-box">
+              <label class="permission-checkbox-label" for="permission-checkbox">
+                <input type="checkbox" id="permission-checkbox" required />
+                <span class="permission-label-text">
+                  <strong>Permission & Ownership Confirmation:</strong> 
+                  I confirm that I own, created, or have explicit authorization to analyze this video file. 
+                  <span class="ethical-note">LoopLens respects intellectual property and does not stream or download YouTube videos.</span>
+                </span>
+              </label>
+            </div>
+
+            <!-- Configurable Options Row -->
+            <div class="analysis-options-row">
+              <div class="option-group">
+                <label for="sample-interval-select" class="option-label">
+                  Sampling Interval:
+                </label>
+                <select id="sample-interval-select" class="option-select">
+                  <option value="0.5">Every 0.5s (High Resolution / Slower)</option>
+                  <option value="1.0" selected>Every 1.0s (Balanced / Recommended)</option>
+                  <option value="2.0">Every 2.0s (Fast Scan)</option>
+                </select>
+              </div>
+
+              <div class="option-group">
+                <label for="min-sequence-select" class="option-label">
+                  Min Sequence Duration:
+                </label>
+                <select id="min-sequence-select" class="option-select">
+                  <option value="2.0">2.0 seconds</option>
+                  <option value="3.0" selected>3.0 seconds (Recommended)</option>
+                  <option value="5.0">5.0 seconds</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="upload-actions-row">
+              <button type="submit" id="upload-analyze-btn" class="analyze-btn" disabled>
+                <span class="btn-spinner" id="upload-btn-spinner" aria-hidden="true" style="display: none;"></span>
+                <span class="btn-icon" id="upload-btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </span>
+                <span class="btn-text" id="upload-btn-text">Analyze Video Frames</span>
+              </button>
+
+              <!-- Quick Demo Trigger -->
+              <div class="demo-trigger-wrapper">
+                <button type="button" id="run-demo-btn" class="demo-btn" title="Try on an authorized synthetic demonstration clip">
+                  <span>🧪 Try Permitted Demo Video</span>
+                </button>
+                <select id="demo-type-select" class="demo-select" aria-label="Select demo clip type">
+                  <option value="repeated">Repeated Footage Test (12s)</option>
+                  <option value="static">Static Title Slide Test (8s)</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="video-input-error" class="input-error-msg" role="alert" style="display: none;"></div>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- API Key Notice Banner (Shown dynamically if API key is not configured) -->
+    <section id="api-key-banner" class="api-key-banner" style="display: none;" aria-live="polite">
+      <div class="banner-inner">
+        <div class="banner-icon-col">
+          <div class="banner-warning-icon">⚙️</div>
+        </div>
+        <div class="banner-content">
+          <div class="banner-badge">Setup Notice</div>
+          <h2 class="banner-title">YouTube API Key Required for Live Queries</h2>
+          <p class="banner-text">
+            LoopLens is strictly connected to authentic YouTube Data API v3 and never invents or fakes results.
+            To fetch live video data and comments, set your API key in the server's <code>.env</code> file.
+          </p>
+          <div class="banner-steps">
+            <div class="step-item">
+              <span class="step-num">1</span>
+              <span>Get a free API key from the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a>.</span>
+            </div>
+            <div class="step-item">
+              <span class="step-num">2</span>
+              <span>Open the <code>.env</code> file in the project folder and set <code>YOUTUBE_API_KEY=your_key_here</code>.</span>
+            </div>
+            <div class="step-item">
+              <span class="step-num">3</span>
+              <span>Restart or refresh the page. Your key stays 100% server-side and is never exposed in browser code.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading State View -->
+    <section id="loading-view" class="state-container loading-state" style="display: none;" aria-live="assertive">
+      <div class="loading-card">
+        <div class="radar-spinner" aria-hidden="true">
+          <div class="radar-beam"></div>
+        </div>
+        <h2 class="loading-title">Scanning YouTube Video Data</h2>
+        <p class="loading-subtitle" id="loading-step-text">Connecting to YouTube Data API v3...</p>
+        <div class="loading-progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error State View -->
+    <section id="error-view" class="state-container error-state" style="display: none;" role="alert">
+      <div class="error-card">
+        <div class="error-icon-wrapper" aria-hidden="true">⚠️</div>
+        <h2 id="error-title" class="error-title">Analysis Failed</h2>
+        <p id="error-description" class="error-description">An unexpected error occurred.</p>
+        <div id="error-action-wrapper" class="error-actions">
+          <button type="button" id="error-dismiss-btn" class="secondary-btn">Try Another Video</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results View -->
+    <section id="results-view" class="results-container" style="display: none;">
+      
+      <!-- Video Metadata Header Card -->
+      <article class="video-meta-card">
+        <div class="video-thumb-container">
+          <img id="video-thumbnail" src="" alt="Video thumbnail preview" class="video-thumb-img" loading="lazy">
+          <span id="video-duration-badge" class="duration-badge" aria-label="Duration">0:00</span>
+        </div>
+        <div class="video-meta-details">
+          <div class="meta-pretitle">
+            <span class="platform-chip">YouTube</span>
+            <span id="video-published-date" class="published-chip">Published --</span>
+          </div>
+          <h2 id="video-title" class="video-title">Video Title</h2>
+          <div class="channel-row">
+            <span class="channel-icon" aria-hidden="true">📺</span>
+            <span id="video-channel" class="video-channel">Channel Name</span>
+          </div>
+          
+          <div class="stats-pills-row">
+            <div class="stat-pill">
+              <span class="stat-label">Views:</span>
+              <span id="video-views-count" class="stat-value">--</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Duration:</span>
+              <span id="video-duration-text" class="stat-value">--</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Comments:</span>
+              <span id="video-comments-count" class="stat-value">--</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Status Verdict Card (Displayed only for legitimate scan results, hidden for unavailable/error states) -->
+      <article id="verdict-card" class="verdict-card verdict-safe" style="display: none;">
+        <div class="verdict-header">
+          <div class="verdict-icon-box" id="verdict-icon-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div class="verdict-header-text">
+            <div class="verdict-tag" id="verdict-tag">STATUS</div>
+            <h3 id="verdict-title" class="verdict-title">Status Title</h3>
+          </div>
+        </div>
+
+        <p id="verdict-summary" class="verdict-summary">
+          Detailed summary description.
+        </p>
+      </article>
+
+      <!-- Evidence-Based Analysis Pipeline Card -->
+      <article class="pipeline-card" aria-labelledby="pipeline-heading">
+        <div class="pipeline-header">
+          <div class="pipeline-title-group">
+            <span class="pipeline-title-icon" aria-hidden="true">📊</span>
+            <h4 id="pipeline-heading" class="pipeline-title">Evidence-Based Analysis Pipeline</h4>
+          </div>
+          <span class="pipeline-tag">3 Distinct Sources</span>
+        </div>
+        <p class="pipeline-desc">
+          LoopLens evaluates online video links through multiple independent evidence sources. Findings are transparently separated so you know exactly which data backs each claim.
+        </p>
+
+        <div class="pipeline-grid">
+          <!-- Source A: Video Metadata -->
+          <div class="pipeline-item-card" id="pipeline-source-meta">
+            <div class="pipeline-item-top">
+              <span class="pipeline-icon" aria-hidden="true">📋</span>
+              <div class="pipeline-item-titles">
+                <span class="pipeline-item-name">Source A: Video Metadata</span>
+                <span class="pipeline-status-badge status-badge-evaluated" id="pipe-meta-status">Evaluated</span>
+              </div>
+            </div>
+            <p class="pipeline-item-text" id="pipe-meta-desc">
+              Evaluated video title, creator description, duration, and chapter markers.
+            </p>
+          </div>
+
+          <!-- Source B: Community Comments -->
+          <div class="pipeline-item-card" id="pipeline-source-community">
+            <div class="pipeline-item-top">
+              <span class="pipeline-icon" aria-hidden="true">💬</span>
+              <div class="pipeline-item-titles">
+                <span class="pipeline-item-name">Source B: Community Feedback</span>
+                <span class="pipeline-status-badge status-badge-evaluated" id="pipe-community-status">Evaluated</span>
+              </div>
+            </div>
+            <p class="pipeline-item-text" id="pipe-community-desc">
+              Analyzed public comments retrieved via YouTube API v3 for authentic viewer feedback.
+            </p>
+          </div>
+
+          <!-- Source C: Direct Footage Analysis -->
+          <div class="pipeline-item-card pipeline-card-unavailable" id="pipeline-source-footage">
+            <div class="pipeline-item-top">
+              <span class="pipeline-icon" aria-hidden="true">🔬</span>
+              <div class="pipeline-item-titles">
+                <span class="pipeline-item-name">Source C: Direct Visual Footage</span>
+                <span class="pipeline-status-badge status-badge-unperformed" id="pipe-footage-status">Not Performed</span>
+              </div>
+            </div>
+            <p class="pipeline-item-text" id="pipe-footage-desc">
+              Direct pixel-level frame analysis is unavailable for remote YouTube URLs because official YouTube APIs (Data API v3 &amp; IFrame Player API) do not expose downloadable video streams or raw frames. LoopLens strictly complies with platform access policies and does not scrape streams.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Direct Visual Sequence Analysis Card (Rendered if actual footage was analysed) -->
+      <section id="yt-visual-analysis-section" class="analysis-breakdown" style="display: none;" aria-labelledby="yt-visual-heading">
+        <div class="section-header">
+          <h3 id="yt-visual-heading" class="section-title">Direct Footage Analysis Evidence</h3>
+          <span id="yt-visual-source-badge" class="sample-badge">Authorized Footage Verification</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-num" id="yt-metric-video-total-matches">0</span>
+            <span class="metric-label">Candidate Match Runs</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="yt-metric-video-dynamic-matches">0</span>
+            <span class="metric-label">Dynamic Repeated Sequences</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="yt-metric-video-static-matches">0</span>
+            <span class="metric-label">Static Scene Flags</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="yt-metric-video-repeat-sec">0s</span>
+            <span class="metric-label">Total Repeated Footage</span>
+          </div>
+        </div>
+
+        <!-- Matched Sequences Container -->
+        <div class="matches-section">
+          <div class="matches-header-row">
+            <div>
+              <h4 class="comments-heading">Matched Sequences &amp; Visual Evidence</h4>
+              <p class="comments-subtext">Side-by-side keyframe evidence comparing original footage against candidate repeated sequence:</p>
+            </div>
+          </div>
+          <div id="yt-video-matches-list" class="video-matches-list"></div>
+        </div>
+      </section>
+
+      <!-- Evidence & Metric Stats -->
+      <section class="analysis-breakdown" aria-labelledby="breakdown-heading">
+        <div class="section-header">
+          <h3 id="breakdown-heading" class="section-title">Community Evidence Breakdown</h3>
+          <span id="analyzed-sample-badge" class="sample-badge">Top 100 comments evaluated</span>
+        </div>
+
+        <div class="metrics-grid metrics-grid-5">
+          <div class="metric-card">
+            <span class="metric-num" id="metric-analyzed">0</span>
+            <span class="metric-label">Comments Analyzed</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-flagged">0</span>
+            <span class="metric-label">Flagged Reports</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-repeat-reports">0</span>
+            <span class="metric-label">Loop / Repeat Reports</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-recap-reports">0</span>
+            <span class="metric-label">Recap / Montage Mentions</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-incomplete-reports">0</span>
+            <span class="metric-label">Cut-off / Incomplete Reports</span>
+          </div>
+        </div>
+
+        <!-- Timestamps Flagged Card (if any found) -->
+        <div id="timestamps-card" class="timestamps-card" style="display: none;">
+          <div class="timestamps-header-row">
+            <h4 class="timestamps-title">⏱️ Identified Timestamps &amp; Chapters:</h4>
+            <span class="timestamps-caveat-badge">Community &amp; Creator Markers</span>
+          </div>
+          <div id="timestamps-list" class="timestamps-list"></div>
+          <p class="timestamps-disclaimer">
+            * Timestamps reflect specific points cited in public viewer comments or creator description chapters. Direct computer-vision footage matching was not performed on this video.
+          </p>
+        </div>
+
+        <!-- Evidence Comments Container -->
+        <div class="comments-section">
+          <h4 class="comments-heading">Authentic Community Quotes</h4>
+          <p class="comments-subtext">Original viewer feedback identifying video anomalies (never modified or fabricated):</p>
+          
+          <div id="evidence-comments-list" class="evidence-comments-list">
+            <!-- Dynamically populated or empty message -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Action Row -->
+      <div class="results-actions">
+        <button type="button" id="reset-analysis-btn" class="primary-action-btn">
+          <span>Scan Another Video</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Video Frame Analysis Results View -->
+    <section id="video-results-view" class="results-container" style="display: none;">
+      
+      <!-- Video Specifications Card -->
+      <article class="video-meta-card file-meta-card">
+        <div class="file-thumb-container">
+          <div class="file-thumb-icon">🎞️</div>
+          <span id="file-duration-badge" class="duration-badge" aria-label="Video Duration">0:00</span>
+        </div>
+        <div class="video-meta-details">
+          <div class="meta-pretitle">
+            <span class="platform-chip chip-cv">Perceptual Frame Analysis</span>
+            <span class="published-chip chip-proto">Experimental Prototype</span>
+          </div>
+          <h2 id="file-display-name" class="video-title">video.mp4</h2>
+          <div class="channel-row">
+            <span class="channel-icon" aria-hidden="true">⚙️</span>
+            <span id="file-specs-summary" class="video-channel">1920x1080 &bull; 30 fps &bull; Local File</span>
+          </div>
+          
+          <div class="stats-pills-row">
+            <div class="stat-pill">
+              <span class="stat-label">Duration:</span>
+              <span id="file-duration-text" class="stat-value">--</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Sampled Frames:</span>
+              <span id="file-sampled-count" class="stat-value">--</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Interval:</span>
+              <span id="file-interval-text" class="stat-value">--</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">Total Frames:</span>
+              <span id="file-total-frames" class="stat-value">--</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Frame Repetition Verdict Card -->
+      <article id="video-verdict-card" class="verdict-card verdict-safe">
+        <div class="verdict-header">
+          <div class="verdict-icon-box" id="video-verdict-icon-box" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div class="verdict-header-text">
+            <div class="verdict-tag" id="video-verdict-tag">ANALYSIS COMPLETE</div>
+            <h3 id="video-verdict-title" class="verdict-title">Status Title</h3>
+          </div>
+        </div>
+
+        <p id="video-verdict-summary" class="verdict-summary">
+          Summary description of repetition analysis results.
+        </p>
+
+        <!-- Prototype Methodology Notice & Static Scene Disclaimer -->
+        <div class="methodology-notice" role="note">
+          <div class="notice-icon">🔬</div>
+          <div class="notice-content">
+            <strong>CV Prototype Methodology & Limitations:</strong>
+            <span id="video-verdict-notice-text">
+              Frames are sampled at configured intervals and compared using 256-bit dHash, normalized luminance matrices, and HSV color histograms. Matches represent candidate repeated visual runs. Still frames, title cards, and paused footage can produce false positives and are flagged via motion heuristics.
+            </span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Frame Metrics Grid -->
+      <section class="analysis-breakdown" aria-labelledby="video-metrics-heading">
+        <div class="section-header">
+          <h3 id="video-metrics-heading" class="section-title">Visual Repetition Summary</h3>
+          <span id="video-evidence-source-badge" class="sample-badge">Source: Local Video Frame Analysis</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-num" id="metric-video-total-matches">0</span>
+            <span class="metric-label">Candidate Match Runs</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-video-dynamic-matches">0</span>
+            <span class="metric-label">Dynamic Repeated Sequences</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-video-static-matches">0</span>
+            <span class="metric-label">Static Scene Flags</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-num" id="metric-video-repeat-sec">0s</span>
+            <span class="metric-label">Total Repeated Footage</span>
+          </div>
+        </div>
+
+        <!-- Matched Sequences Container -->
+        <div class="matches-section">
+          <div class="matches-header-row">
+            <div>
+              <h4 class="comments-heading">Matched Sequences & Visual Evidence</h4>
+              <p class="comments-subtext">Side-by-side keyframe evidence comparing original footage against candidate repeated sequence:</p>
+            </div>
+          </div>
+
+          <div id="video-matches-list" class="video-matches-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom Action Row -->
+      <div class="results-actions">
+        <button type="button" id="reset-video-analysis-btn" class="primary-action-btn">
+          <span>Analyze Another Video File</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Educational & Mission Section -->
+    <section class="info-section" aria-labelledby="mission-heading">
+      <div class="info-grid">
+        <article class="info-card">
+          <div class="info-icon">⏱️</div>
+          <h2 id="mission-heading" class="info-card-title">Protecting Viewer Time</h2>
+          <p class="info-card-desc">
+            Some content creators repeat scenes or loop footage to stretch runtimes past 10 or 20 minutes for advertising revenue. LoopLens helps you spot these tactics instantly.
+          </p>
+        </article>
+
+        <article class="info-card">
+          <div class="info-icon">🔍</div>
+          <h2 class="info-card-title">Authentic Evidence Only</h2>
+          <p class="info-card-desc">
+            LoopLens connects directly to YouTube's public API. We never fabricate comments or pretend to perform pixel-level verification where only community reports exist.
+          </p>
+        </article>
+
+        <article class="info-card">
+          <div class="info-icon">🔒</div>
+          <h2 class="info-card-title">Zero API Key Leakage</h2>
+          <p class="info-card-desc">
+            All YouTube Data API v3 communication happens strictly on the backend server. Your credentials and environment variables are never transmitted to client browsers.
+          </p>
+        </article>
+
+        <article class="info-card">
+          <div class="info-icon">🔬</div>
+          <h2 class="info-card-title">Computer-Vision Prototype</h2>
+          <p class="info-card-desc">
+            Visual repeated-footage detection operates locally on user-provided clips via perceptual difference hashing. It filters static scenes to prevent false positives and does not access YouTube streams.
+          </p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="footer-logo">LoopLens</span>
+        <span class="footer-tagline">— Your time is valuable. Check before you watch.</span>
+      </div>
+      <p class="footer-disclaimer">
+        LoopLens queries publicly available metadata and comments via the YouTube Data API v3. 
+        YouTube is a registered trademark of Google LLC. LoopLens is an independent tool.
+      </p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
